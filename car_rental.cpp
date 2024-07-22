@@ -64,19 +64,19 @@ public:
 
 class Rental {
 private:
-    Car car;
-    Customer customer;
+    Car* car;
+    Customer* customer;
     int days;
 
 public:
-    Rental(const Car& car, const Customer& customer, int days)
+    Rental(Car* car, Customer* customer, int days)
         : car(car), customer(customer), days(days) {}
 
-    Car getCar() const {
+    Car* getCar() const {
         return car;
     }
 
-    Customer getCustomer() const {
+    Customer* getCustomer() const {
         return customer;
     }
 
@@ -100,19 +100,19 @@ public:
         customers.push_back(customer);
     }
 
-    void rentCar(Car& car, const Customer& customer, int days) {
-        if (car.available()) {
-            car.rent();
+    void rentCar(Car* car, Customer* customer, int days) {
+        if (car->available()) {
+            car->rent();
             rentals.emplace_back(car, customer, days);
         } else {
             std::cout << "Car is not available for rent." << std::endl;
         }
     }
 
-    void returnCar(Car& car) {
-        car.returnCar();
+    void returnCar(Car* car) {
+        car->returnCar();
         for (auto it = rentals.begin(); it != rentals.end(); ++it) {
-            if (it->getCar().getCarId() == car.getCarId()) {
+            if (it->getCar()->getCarId() == car->getCarId()) {
                 rentals.erase(it);
                 break;
             }
@@ -135,6 +135,7 @@ public:
                 std::cout << "\n== Rent a Car ==\n" << std::endl;
                 std::cout << "Enter your name: ";
                 std::string customerName;
+                std::cin.ignore();
                 std::getline(std::cin, customerName);
 
                 std::cout << "\nAvailable Cars:" << std::endl;
@@ -179,7 +180,7 @@ public:
                     std::cin.ignore(); // Consume newline
 
                     if (confirm == "Y" || confirm == "y") {
-                        rentCar(*selectedCar, newCustomer, rentalDays);
+                        rentCar(selectedCar, &customers.back(), rentalDays);
                         std::cout << "\nCar rented successfully." << std::endl;
                     } else {
                         std::cout << "\nRental canceled." << std::endl;
@@ -204,14 +205,14 @@ public:
                 if (carToReturn != nullptr) {
                     Customer* customer = nullptr;
                     for (const auto& rental : rentals) {
-                        if (rental.getCar().getCarId() == carToReturn->getCarId()) {
-                            customer = &const_cast<Customer&>(rental.getCustomer());
+                        if (rental.getCar()->getCarId() == carToReturn->getCarId()) {
+                            customer = rental.getCustomer();
                             break;
                         }
                     }
 
                     if (customer != nullptr) {
-                        returnCar(*carToReturn);
+                        returnCar(carToReturn);
                         std::cout << "Car returned successfully by " << customer->getName() << std::endl;
                     } else {
                         std::cout << "Car was not rented or rental information is missing." << std::endl;
