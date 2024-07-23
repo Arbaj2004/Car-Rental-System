@@ -3,20 +3,23 @@
 #include <string>
 #include <iomanip>
 
-class Car {
+// Base class
+class Vehicle {
 private:
-    std::string carId;
+    std::string vehicleId;
     std::string brand;
     std::string model;
     double basePricePerDay;
     bool isAvailable;
 
 public:
-    Car(const std::string& carId, const std::string& brand, const std::string& model, double basePricePerDay)
-        : carId(carId), brand(brand), model(model), basePricePerDay(basePricePerDay), isAvailable(true) {}
+    Vehicle(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
+        : vehicleId(vehicleId), brand(brand), model(model), basePricePerDay(basePricePerDay), isAvailable(true) {}
 
-    std::string getCarId() const {
-        return carId;
+    virtual ~Vehicle() = default; // Virtual destructor for polymorphic base class
+
+    std::string getVehicleId() const {
+        return vehicleId;
     }
 
     std::string getBrand() const {
@@ -27,7 +30,7 @@ public:
         return model;
     }
 
-    double calculatePrice(int rentalDays) const {
+    virtual double calculatePrice(int rentalDays) const {
         return basePricePerDay * rentalDays;
     }
 
@@ -39,8 +42,20 @@ public:
         isAvailable = false;
     }
 
-    void returnCar() {
+    void returnVehicle() {
         isAvailable = true;
+    }
+};
+
+// Derived class
+class Car : public Vehicle {
+public:
+    Car(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
+        : Vehicle(vehicleId, brand, model, basePricePerDay) {}
+
+    double calculatePrice(int rentalDays) const override {
+        // Custom price calculation if needed
+        return Vehicle::calculatePrice(rentalDays);
     }
 };
 
@@ -64,16 +79,16 @@ public:
 
 class Rental {
 private:
-    Car* car;
+    Vehicle* vehicle;
     Customer* customer;
     int days;
 
 public:
-    Rental(Car* car, Customer* customer, int days)
-        : car(car), customer(customer), days(days) {}
+    Rental(Vehicle* vehicle, Customer* customer, int days)
+        : vehicle(vehicle), customer(customer), days(days) {}
 
-    Car* getCar() const {
-        return car;
+    Vehicle* getVehicle() const {
+        return vehicle;
     }
 
     Customer* getCustomer() const {
@@ -87,32 +102,38 @@ public:
 
 class CarRentalSystem {
 private:
-    std::vector<Car> cars;
+    std::vector<Vehicle*> vehicles;
     std::vector<Customer> customers;
     std::vector<Rental> rentals;
 
 public:
-    void addCar(const Car& car) {
-        cars.push_back(car);
+    ~CarRentalSystem() {
+        for (auto vehicle : vehicles) {
+            delete vehicle;
+        }
+    }
+
+    void addVehicle(Vehicle* vehicle) {
+        vehicles.push_back(vehicle);
     }
 
     void addCustomer(const Customer& customer) {
         customers.push_back(customer);
     }
 
-    void rentCar(Car* car, Customer* customer, int days) {
-        if (car->available()) {
-            car->rent();
-            rentals.emplace_back(car, customer, days);
+    void rentVehicle(Vehicle* vehicle, Customer* customer, int days) {
+        if (vehicle->available()) {
+            vehicle->rent();
+            rentals.emplace_back(vehicle, customer, days);
         } else {
-            std::cout << "Car is not available for rent." << std::endl;
+            std::cout << "Vehicle is not available for rent." << std::endl;
         }
     }
 
-    void returnCar(Car* car) {
-        car->returnCar();
+    void returnVehicle(Vehicle* vehicle) {
+        vehicle->returnVehicle();
         for (auto it = rentals.begin(); it != rentals.end(); ++it) {
-            if (it->getCar()->getCarId() == car->getCarId()) {
+            if (it->getVehicle()->getVehicleId() == vehicle->getVehicleId()) {
                 rentals.erase(it);
                 break;
             }
@@ -122,8 +143,8 @@ public:
     void menu() {
         while (true) {
             std::cout << "===== Car Rental System =====" << std::endl;
-            std::cout << "1. Rent a Car" << std::endl;
-            std::cout << "2. Return a Car" << std::endl;
+            std::cout << "1. Rent a Vehicle" << std::endl;
+            std::cout << "2. Return a Vehicle" << std::endl;
             std::cout << "3. Exit" << std::endl;
             std::cout << "Enter your choice: ";
 
@@ -132,22 +153,22 @@ public:
             std::cin.ignore(); // Consume newline
 
             if (choice == 1) {
-                std::cout << "\n== Rent a Car ==\n" << std::endl;
+                std::cout << "\n== Rent a Vehicle ==\n" << std::endl;
                 std::cout << "Enter your name: ";
                 std::string customerName;
                 std::cin.ignore();
                 std::getline(std::cin, customerName);
 
-                std::cout << "\nAvailable Cars:" << std::endl;
-                for (const auto& car : cars) {
-                    if (car.available()) {
-                        std::cout << car.getCarId() << " - " << car.getBrand() << " " << car.getModel() << std::endl;
+                std::cout << "\nAvailable Vehicles:" << std::endl;
+                for (const auto& vehicle : vehicles) {
+                    if (vehicle->available()) {
+                        std::cout << vehicle->getVehicleId() << " - " << vehicle->getBrand() << " " << vehicle->getModel() << std::endl;
                     }
                 }
 
-                std::cout << "\nEnter the car ID you want to rent: ";
-                std::string carId;
-                std::getline(std::cin, carId);
+                std::cout << "\nEnter the vehicle ID you want to rent: ";
+                std::string vehicleId;
+                std::getline(std::cin, vehicleId);
 
                 std::cout << "Enter the number of days for rental: ";
                 int rentalDays;
@@ -157,20 +178,20 @@ public:
                 Customer newCustomer("CUS" + std::to_string(customers.size() + 1), customerName);
                 addCustomer(newCustomer);
 
-                Car* selectedCar = nullptr;
-                for (auto& car : cars) {
-                    if (car.getCarId() == carId && car.available()) {
-                        selectedCar = &car;
+                Vehicle* selectedVehicle = nullptr;
+                for (auto& vehicle : vehicles) {
+                    if (vehicle->getVehicleId() == vehicleId && vehicle->available()) {
+                        selectedVehicle = vehicle;
                         break;
                     }
                 }
 
-                if (selectedCar != nullptr) {
-                    double totalPrice = selectedCar->calculatePrice(rentalDays);
+                if (selectedVehicle != nullptr) {
+                    double totalPrice = selectedVehicle->calculatePrice(rentalDays);
                     std::cout << "\n== Rental Information ==\n" << std::endl;
                     std::cout << "Customer ID: " << newCustomer.getCustomerId() << std::endl;
                     std::cout << "Customer Name: " << newCustomer.getName() << std::endl;
-                    std::cout << "Car: " << selectedCar->getBrand() << " " << selectedCar->getModel() << std::endl;
+                    std::cout << "Vehicle: " << selectedVehicle->getBrand() << " " << selectedVehicle->getModel() << std::endl;
                     std::cout << "Rental Days: " << rentalDays << std::endl;
                     std::cout << "Total Price: $" << std::fixed << std::setprecision(2) << totalPrice << std::endl;
 
@@ -180,45 +201,45 @@ public:
                     std::cin.ignore(); // Consume newline
 
                     if (confirm == "Y" || confirm == "y") {
-                        rentCar(selectedCar, &customers.back(), rentalDays);
-                        std::cout << "\nCar rented successfully." << std::endl;
+                        rentVehicle(selectedVehicle, &customers.back(), rentalDays);
+                        std::cout << "\nVehicle rented successfully." << std::endl;
                     } else {
                         std::cout << "\nRental canceled." << std::endl;
                     }
                 } else {
-                    std::cout << "\nInvalid car selection or car not available for rent." << std::endl;
+                    std::cout << "\nInvalid vehicle selection or vehicle not available for rent." << std::endl;
                 }
             } else if (choice == 2) {
-                std::cout << "\n== Return a Car ==\n" << std::endl;
-                std::cout << "Enter the car ID you want to return: ";
-                std::string carId;
-                std::getline(std::cin, carId);
+                std::cout << "\n== Return a Vehicle ==\n" << std::endl;
+                std::cout << "Enter the vehicle ID you want to return: ";
+                std::string vehicleId;
+                std::getline(std::cin, vehicleId);
 
-                Car* carToReturn = nullptr;
-                for (auto& car : cars) {
-                    if (car.getCarId() == carId && !car.available()) {
-                        carToReturn = &car;
+                Vehicle* vehicleToReturn = nullptr;
+                for (auto& vehicle : vehicles) {
+                    if (vehicle->getVehicleId() == vehicleId && !vehicle->available()) {
+                        vehicleToReturn = vehicle;
                         break;
                     }
                 }
 
-                if (carToReturn != nullptr) {
+                if (vehicleToReturn != nullptr) {
                     Customer* customer = nullptr;
                     for (const auto& rental : rentals) {
-                        if (rental.getCar()->getCarId() == carToReturn->getCarId()) {
+                        if (rental.getVehicle()->getVehicleId() == vehicleToReturn->getVehicleId()) {
                             customer = rental.getCustomer();
                             break;
                         }
                     }
 
                     if (customer != nullptr) {
-                        returnCar(carToReturn);
-                        std::cout << "Car returned successfully by " << customer->getName() << std::endl;
+                        returnVehicle(vehicleToReturn);
+                        std::cout << "Vehicle returned successfully by " << customer->getName() << std::endl;
                     } else {
-                        std::cout << "Car was not rented or rental information is missing." << std::endl;
+                        std::cout << "Vehicle was not rented or rental information is missing." << std::endl;
                     }
                 } else {
-                    std::cout << "Invalid car ID or car is not rented." << std::endl;
+                    std::cout << "Invalid vehicle ID or vehicle is not rented." << std::endl;
                 }
             } else if (choice == 3) {
                 break;
@@ -234,12 +255,12 @@ public:
 int main() {
     CarRentalSystem rentalSystem;
 
-    Car car1("C001", "Toyota", "Camry", 60.0);
-    Car car2("C002", "Honda", "Accord", 70.0);
-    Car car3("C003", "Mahindra", "Thar", 150.0);
-    rentalSystem.addCar(car1);
-    rentalSystem.addCar(car2);
-    rentalSystem.addCar(car3);
+    Vehicle* car1 = new Car("C001", "Toyota", "Camry", 60.0);
+    Vehicle* car2 = new Car("C002", "Honda", "Accord", 70.0);
+    Vehicle* car3 = new Car("C003", "Mahindra", "Thar", 150.0);
+    rentalSystem.addVehicle(car1);
+    rentalSystem.addVehicle(car2);
+    rentalSystem.addVehicle(car3);
 
     rentalSystem.menu();
 
