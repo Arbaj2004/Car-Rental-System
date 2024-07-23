@@ -3,7 +3,7 @@
 #include <string>
 #include <iomanip>
 
-// Base class
+
 class Vehicle {
 private:
     std::string vehicleId;
@@ -16,7 +16,7 @@ public:
     Vehicle(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
         : vehicleId(vehicleId), brand(brand), model(model), basePricePerDay(basePricePerDay), isAvailable(true) {}
 
-    virtual ~Vehicle() = default; // Virtual destructor for polymorphic base class
+    virtual ~Vehicle() = default; 
 
     std::string getVehicleId() const {
         return vehicleId;
@@ -47,14 +47,14 @@ public:
     }
 };
 
-// Derived class
+
 class Car : public Vehicle {
 public:
     Car(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
         : Vehicle(vehicleId, brand, model, basePricePerDay) {}
 
     double calculatePrice(int rentalDays) const override {
-        // Custom price calculation if needed
+        
         return Vehicle::calculatePrice(rentalDays);
     }
 };
@@ -150,7 +150,7 @@ public:
 
             int choice;
             std::cin >> choice;
-            std::cin.ignore(); // Consume newline
+            std::cin.ignore(); 
 
             if (choice == 1) {
                 std::cout << "\n== Rent a Vehicle ==\n" << std::endl;
@@ -173,7 +173,7 @@ public:
                 std::cout << "Enter the number of days for rental: ";
                 int rentalDays;
                 std::cin >> rentalDays;
-                std::cin.ignore(); // Consume newline
+                std::cin.ignore(); 
 
                 Customer newCustomer("CUS" + std::to_string(customers.size() + 1), customerName);
                 addCustomer(newCustomer);
@@ -198,7 +198,7 @@ public:
                     std::cout << "\nConfirm rental (Y/N): ";
                     std::string confirm;
                     std::cin >> confirm;
-                    std::cin.ignore(); // Consume newline
+                    std::cin.ignore(); 
 
                     if (confirm == "Y" || confirm == "y") {
                         rentVehicle(selectedVehicle, &customers.back(), rentalDays);
