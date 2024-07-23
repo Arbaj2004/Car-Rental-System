@@ -3,20 +3,20 @@
 #include <string>
 #include <iomanip>
 
-
 class Vehicle {
 private:
     std::string vehicleId;
     std::string brand;
     std::string model;
-    double basePricePerDay;
+    double basePricePerKm;
     bool isAvailable;
+    int wheelers;
 
 public:
-    Vehicle(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
-        : vehicleId(vehicleId), brand(brand), model(model), basePricePerDay(basePricePerDay), isAvailable(true) {}
+    Vehicle(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm, int wheelers)
+        : vehicleId(vehicleId), brand(brand), model(model), basePricePerKm(basePricePerKm), isAvailable(true), wheelers(wheelers) {}
 
-    virtual ~Vehicle() = default; 
+    virtual ~Vehicle() = default;
 
     std::string getVehicleId() const {
         return vehicleId;
@@ -30,8 +30,12 @@ public:
         return model;
     }
 
-    virtual double calculatePrice(int rentalDays) const {
-        return basePricePerDay * rentalDays;
+    int getWheelers() const {
+        return wheelers;
+    }
+
+    virtual double calculatePrice(double distance) const {
+        return basePricePerKm * distance;
     }
 
     bool available() const {
@@ -45,17 +49,57 @@ public:
     void returnVehicle() {
         isAvailable = true;
     }
+
+    virtual void display() const = 0; // Pure virtual function for abstraction
 };
 
+class Bike : public Vehicle {
+public:
+    Bike(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm)
+        : Vehicle(vehicleId, brand, model, basePricePerKm, 2) {}
+
+    void display() const override {
+        std::cout << "Bike - " << getBrand() << " " << getModel() << " (Price per km: $" << calculatePrice(1) << ", Wheelers: " << getWheelers() << ")" << std::endl;
+    }
+};
+
+class Auto : public Vehicle {
+public:
+    Auto(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm)
+        : Vehicle(vehicleId, brand, model, basePricePerKm, 3) {}
+
+    void display() const override {
+        std::cout << "Auto - " << getBrand() << " " << getModel() << " (Price per km: $" << calculatePrice(1) << ", Wheelers: " << getWheelers() << ")" << std::endl;
+    }
+};
 
 class Car : public Vehicle {
 public:
-    Car(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerDay)
-        : Vehicle(vehicleId, brand, model, basePricePerDay) {}
+    Car(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm)
+        : Vehicle(vehicleId, brand, model, basePricePerKm, 4) {}
 
-    double calculatePrice(int rentalDays) const override {
-        
-        return Vehicle::calculatePrice(rentalDays);
+    void display() const override {
+        std::cout << "Car - " << getBrand() << " " << getModel() << " (Price per km: $" << calculatePrice(1) << ", Wheelers: " << getWheelers() << ")" << std::endl;
+    }
+};
+
+class EconomyCar : public Car {
+public:
+    EconomyCar(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm)
+        : Car(vehicleId, brand, model, basePricePerKm) {}
+
+    void display() const override {
+        std::cout << "Economy Car - " << getBrand() << " " << getModel() << " (Price per km: $" << calculatePrice(1) << ", Wheelers: " << getWheelers() << ")" << std::endl;
+    }
+};
+
+class ClassicCar : public Car {
+public:
+    ClassicCar(const std::string& vehicleId, const std::string& brand, const std::string& model, double basePricePerKm)
+        : Car(vehicleId, brand, model, basePricePerKm) {}
+
+    void display() const override {
+        std::cout << "Classic Car - " << getBrand() << " " << getModel() << " (Price per km: $" << calculatePrice(1) << ", Wheelers: " << getWheelers() << ")" << std::endl;
     }
 };
 
@@ -81,11 +125,11 @@ class Rental {
 private:
     Vehicle* vehicle;
     Customer* customer;
-    int days;
+    double distance;
 
 public:
-    Rental(Vehicle* vehicle, Customer* customer, int days)
-        : vehicle(vehicle), customer(customer), days(days) {}
+    Rental(Vehicle* vehicle, Customer* customer, double distance)
+        : vehicle(vehicle), customer(customer), distance(distance) {}
 
     Vehicle* getVehicle() const {
         return vehicle;
@@ -95,8 +139,8 @@ public:
         return customer;
     }
 
-    int getDays() const {
-        return days;
+    double getDistance() const {
+        return distance;
     }
 };
 
@@ -121,10 +165,10 @@ public:
         customers.push_back(customer);
     }
 
-    void rentVehicle(Vehicle* vehicle, Customer* customer, int days) {
+    void rentVehicle(Vehicle* vehicle, Customer* customer, double distance) {
         if (vehicle->available()) {
             vehicle->rent();
-            rentals.emplace_back(vehicle, customer, days);
+            rentals.emplace_back(vehicle, customer, distance);
         } else {
             std::cout << "Vehicle is not available for rent." << std::endl;
         }
@@ -150,7 +194,7 @@ public:
 
             int choice;
             std::cin >> choice;
-            std::cin.ignore(); 
+            std::cin.ignore();
 
             if (choice == 1) {
                 std::cout << "\n== Rent a Vehicle ==\n" << std::endl;
@@ -162,7 +206,7 @@ public:
                 std::cout << "\nAvailable Vehicles:" << std::endl;
                 for (const auto& vehicle : vehicles) {
                     if (vehicle->available()) {
-                        std::cout << vehicle->getVehicleId() << " - " << vehicle->getBrand() << " " << vehicle->getModel() << std::endl;
+                        vehicle->display();
                     }
                 }
 
@@ -170,10 +214,10 @@ public:
                 std::string vehicleId;
                 std::getline(std::cin, vehicleId);
 
-                std::cout << "Enter the number of days for rental: ";
-                int rentalDays;
-                std::cin >> rentalDays;
-                std::cin.ignore(); 
+                std::cout << "Enter the distance to be traveled (km): ";
+                double distance;
+                std::cin >> distance;
+                std::cin.ignore();
 
                 Customer newCustomer("CUS" + std::to_string(customers.size() + 1), customerName);
                 addCustomer(newCustomer);
@@ -187,21 +231,21 @@ public:
                 }
 
                 if (selectedVehicle != nullptr) {
-                    double totalPrice = selectedVehicle->calculatePrice(rentalDays);
+                    double totalPrice = selectedVehicle->calculatePrice(distance);
                     std::cout << "\n== Rental Information ==\n" << std::endl;
                     std::cout << "Customer ID: " << newCustomer.getCustomerId() << std::endl;
                     std::cout << "Customer Name: " << newCustomer.getName() << std::endl;
                     std::cout << "Vehicle: " << selectedVehicle->getBrand() << " " << selectedVehicle->getModel() << std::endl;
-                    std::cout << "Rental Days: " << rentalDays << std::endl;
+                    std::cout << "Distance: " << distance << " km" << std::endl;
                     std::cout << "Total Price: $" << std::fixed << std::setprecision(2) << totalPrice << std::endl;
 
                     std::cout << "\nConfirm rental (Y/N): ";
                     std::string confirm;
                     std::cin >> confirm;
-                    std::cin.ignore(); 
+                    std::cin.ignore();
 
                     if (confirm == "Y" || confirm == "y") {
-                        rentVehicle(selectedVehicle, &customers.back(), rentalDays);
+                        rentVehicle(selectedVehicle, &customers.back(), distance);
                         std::cout << "\nVehicle rented successfully." << std::endl;
                     } else {
                         std::cout << "\nRental canceled." << std::endl;
@@ -255,12 +299,14 @@ public:
 int main() {
     CarRentalSystem rentalSystem;
 
-    Vehicle* car1 = new Car("C001", "Toyota", "Camry", 60.0);
-    Vehicle* car2 = new Car("C002", "Honda", "Accord", 70.0);
-    Vehicle* car3 = new Car("C003", "Mahindra", "Thar", 150.0);
+    Vehicle* bike1 = new Bike("B001", "Yamaha", "FZ", 0.5);
+    Vehicle* auto1 = new Auto("A001", "Bajaj", "RE", 1.0);
+    Vehicle* car1 = new EconomyCar("C001", "Toyota", "Camry", 2.0);
+    Vehicle* car2 = new ClassicCar("C002", "Honda", "Accord", 3.0);
+    rentalSystem.addVehicle(bike1);
+    rentalSystem.addVehicle(auto1);
     rentalSystem.addVehicle(car1);
     rentalSystem.addVehicle(car2);
-    rentalSystem.addVehicle(car3);
 
     rentalSystem.menu();
 
